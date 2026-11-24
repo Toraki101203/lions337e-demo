@@ -1,0 +1,462 @@
+<!doctype html>
+<!--
+  このファイルは何をするか:
+  ライオンズクラブ337-E地区に「集まらなくても回る運営」を提案するための、触れるデモ（見本）。
+  ・オンライン例会（出欠・AI議事録・LINEへの届き方）
+  ・奉仕アイデア箱（会員が投稿・投票 → AIがテーマ別に整理）
+  ・行事の申込と登録料の支払い（事務局の集計画面つき）
+  を、スマホで実際に操作できる。サーバーは使わず、入力はこの端末の中（localStorage）だけに保存される。
+  行事名・クラブ名は337e.jpに公開されている本物、議事録とアイデアは説明用の例。
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>337-E地区 オンライン例会ルーム（ご提案デモ）</title>
+<meta name="description" content="ライオンズクラブ337-E地区向け、オンライン例会・奉仕アイデア箱・行事申込のご提案デモです。" />
+<meta property="og:title" content="337-E地区 オンライン例会ルーム（ご提案デモ）" />
+<meta property="og:description" content="会場からも、自宅からも。つながり続ける地区へ。AI議事録つきオンライン例会と、全員で考える奉仕アイデア箱。" />
+<meta name="theme-color" content="#0b2147" />
+<!-- 共有したときのプレビュー（LINE・Facebook）と、検索エンジンに載せない設定（提案用デモのため） -->
+<meta name="robots" content="noindex, nofollow" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://toraki101203.github.io/lions337e-demo/" />
+<meta property="og:image" content="https://toraki101203.github.io/lions337e-demo/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b2147'/%3E%3Ctext x='16' y='22' font-size='14' font-weight='700' text-anchor='middle' fill='%23ebb700' font-family='sans-serif'%3E337E%3C/text%3E%3C/svg%3E" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  .tab-panel[hidden] { display: none; }
+  .fade-in { animation: fade .18s ease-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body class="bg-stone-50 text-gray-700 min-h-dvh">
+
+<!-- ヘッダー: 先方サイトと同じ紺＋金で「地区の仕組み」に見えるようにする -->
+<header class="sticky top-0 z-20 bg-[#0b2147] text-white">
+  <div class="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
+    <div class="leading-tight">
+      <p class="text-[11px] tracking-widest text-[#ebb700]">LIONS 337-E</p>
+      <p class="text-sm font-bold">オンライン例会ルーム</p>
+    </div>
+    <button id="resetBtn" class="text-xs border border-white/40 rounded px-3 h-9" aria-label="デモの入力内容を最初の状態に戻す">デモを初期化</button>
+  </div>
+  <p class="bg-[#ebb700] text-[#0b2147] text-xs text-center py-1 px-4">ご提案用のデモです。議事録・アイデアは説明のための例です</p>
+</header>
+
+<main class="mx-auto max-w-2xl px-4 pb-28 pt-4">
+
+  <!-- ================= ホーム ================= -->
+  <section id="tab-home" class="tab-panel fade-in space-y-4">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 text-balance leading-relaxed">会場からも、自宅からも。<br>つながり続ける地区へ。</h1>
+      <p class="text-sm text-pretty leading-relaxed mt-1">例会・奉仕活動の相談・行事の申込を、スマホひとつで。会場に来られない会員も、同じ情報で参加できます。</p>
+    </div>
+
+    <article class="bg-white border border-stone-200 rounded-lg p-4">
+      <p class="text-xs font-bold text-[#0b2147]">次回のオンライン例会</p>
+      <p class="text-lg font-bold text-gray-900 mt-1">12月 地区オンライン例会</p>
+      <p class="text-sm tabular-nums">2026年12月10日（木）19:30〜20:30</p>
+      <p class="text-sm mt-2">出席 <span class="font-bold tabular-nums" data-count="yes"></span>名・欠席 <span class="tabular-nums" data-count="no"></span>名・未回答 <span class="tabular-nums" data-count="none"></span>名</p>
+      <button class="mt-3 w-full h-11 rounded bg-[#0b2147] text-white font-bold" data-goto="meeting">出欠を回答する</button>
+    </article>
+
+    <article class="bg-white border border-stone-200 rounded-lg p-4">
+      <p class="text-xs font-bold text-[#0b2147]">新着</p>
+      <ul class="mt-2 divide-y divide-stone-100 text-sm">
+        <li class="py-2 flex justify-between gap-3"><span>11月例会のAI要約が届きました</span><button class="text-[#0b2147] underline shrink-0 min-h-11" data-goto="meeting">読む</button></li>
+        <li class="py-2 flex justify-between gap-3"><span>奉仕アイデアが <b class="tabular-nums" id="ideaCountHome"></b>件 集まっています</span><button class="text-[#0b2147] underline shrink-0 min-h-11" data-goto="ideas">見る</button></li>
+        <li class="py-2 flex justify-between gap-3"><span>12/14 熊本城北LC 高校献血推進運動 参加受付中</span><button class="text-[#0b2147] underline shrink-0 min-h-11" data-goto="apply">申込</button></li>
+      </ul>
+    </article>
+
+    <article class="bg-white border border-stone-200 rounded-lg p-4">
+      <p class="text-xs font-bold text-[#0b2147]">このデモでできること</p>
+      <ol class="mt-2 text-sm space-y-2 leading-relaxed list-decimal pl-5">
+        <li><b>例会</b>: 出欠をワンタップ。終わるとAIが議事録の下書きを作り、確認後に要点が会員のLINEに届く</li>
+        <li><b>アイデア箱</b>: 奉仕活動の案を誰でも投稿・投票。AIがテーマ別に整理し、役員が議題を選ぶ参考に</li>
+        <li><b>申込</b>: 行事の申込と登録料の支払いをネットで完結。集計は自動</li>
+      </ol>
+    </article>
+  </section>
+
+  <!-- ================= 例会 ================= -->
+  <section id="tab-meeting" class="tab-panel fade-in space-y-4" hidden>
+    <article class="bg-white border border-stone-200 rounded-lg p-4">
+      <p class="text-xs font-bold text-[#0b2147]">次回 ─ 12月 地区オンライン例会</p>
+      <p class="text-sm tabular-nums mt-1">2026年12月10日（木）19:30〜20:30 ／ Zoom</p>
+      <ul class="text-sm mt-3 space-y-1 leading-relaxed">
+        <li>1. 開会・ライオンズの誓い（5分）</li>
+        <li>2. 熊本地震 災害ボランティアの報告（10分）</li>
+        <li>3. 奉仕アイデア箱から：上位3案の相談（25分）</li>
+        <li>4. 冬期YCE 台湾来日生の受入家庭について（10分）</li>
+        <li>5. 連絡事項・閉会（10分）</li>
+      </ul>
+      <p class="text-sm font-bold mt-4">出欠をお知らせください</p>
+      <div class="grid grid-cols-3 gap-2 mt-2" role="group" aria-label="出欠の回答">
+        <button class="h-11 rounded border border-stone-300 font-bold" data-rsvp="yes">出席</button>
+        <button class="h-11 rounded border border-stone-300 font-bold" data-rsvp="no">欠席</button>
+        <button class="h-11 rounded border border-stone-300 font-bold" data-rsvp="maybe">未定</button>
+      </div>
+      <p id="rsvpMsg" class="text-sm mt-2 min-h-5" aria-live="polite"></p>
+      <button class="mt-2 w-full h-11 rounded bg-stone-200 text-gray-500 font-bold" disabled>Zoomで参加（当日ここに表示）</button>
+    </article>
+
+    <article class="bg-white border border-stone-200 rounded-lg p-4">
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-xs font-bold text-[#0b2147]">前回 ─ 11月例会の議事録（AIが自動作成）</p>
+        <span class="text-[11px] border border-[#0b2147] text-[#0b2147] rounded px-2 py-0.5 shrink-0">録画から自動作成</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-3" role="tablist" aria-label="議事録の表示切り替え">
+        <button class="h-10 rounded text-sm font-bold" data-minutes="full" role="tab">議事録</button>
+        <button class="h-10 rounded text-sm font-bold" data-minutes="line" role="tab">LINEでの届き方</button>
+      </div>
+
+      <div id="minutes-full" class="mt-3 text-sm leading-relaxed space-y-3">
+        <div>
+          <p class="font-bold text-gray-900">要点（3行）</p>
+          <ul class="list-disc pl-5">
+            <li>熊本地震の災害ボランティアは、12月以降も月1回のペースで続ける</li>
+            <li>12/1 熊本みらいLC チャーターナイトに、各クラブから代表が出席する</li>
+            <li>高校献血推進運動（12/14 城北LC・12/15 龍峰LC）の人手を募る</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-gray-900">決まったこと</p>
+          <ul class="list-disc pl-5">
+            <li>ボランティアの参加受付は、このページの「申込」から行う</li>
+            <li>次回例会で、アイデア箱の上位3案を相談する</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-gray-900">宿題（担当・期限）</p>
+          <table class="w-full text-left mt-1">
+            <thead class="text-xs text-gray-500"><tr><th class="py-1 font-normal">内容</th><th class="py-1 font-normal">担当</th><th class="py-1 font-normal">期限</th></tr></thead>
+            <tbody class="divide-y divide-stone-100">
+              <tr><td class="py-1.5">献血運動の参加者を各クラブで集める</td><td>各クラブ幹事</td><td class="tabular-nums">12/5</td></tr>
+              <tr><td class="py-1.5">YCE 受入家庭の候補を出す</td><td>YCE委員会</td><td class="tabular-nums">12/8</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-gray-500">※ 内容は説明のための例です。実際は Zoom / Google Meet の録画や AI の要約機能から自動で作ります。</p>
+      </div>
+
+      <div id="minutes-line" class="mt-3 hidden">
+        <div class="bg-[#8cabd8]/40 rounded-lg p-3 space-y-2">
+          <p class="text-[11px] text-center text-gray-600">LINE公式アカウント「337-E地区」</p>
+          <div class="bg-white rounded-2xl rounded-tl-none p-3 text-sm leading-relaxed max-w-[85%]">
+            【11月例会のまとめ】<br>
+            ・地震ボランティアは12月以降も月1回継続<br>
+            ・12/1 熊本みらいLC チャーターナイトに代表出席<br>
+            ・12/14・15 高校献血運動の人手募集中<br><br>
+            参加の申込はこちら ▶
+          </div>
+          <div class="bg-white rounded-2xl rounded-tl-none p-3 text-sm leading-relaxed max-w-[85%]">
+            次回 12/10（木）19:30〜 オンライン例会。出欠の回答をお願いします ▶
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">例会が終わると、要点が自動で会員のLINEに届きます。欠席した方も短時間で内容をつかめます。担当の方が確認してから配信します。</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ================= アイデア箱 ================= -->
+  <section id="tab-ideas" class="tab-panel fade-in space-y-4" hidden>
+    <div>
+      <h2 class="text-lg font-bold text-gray-900 text-balance">奉仕アイデア箱</h2>
+      <p class="text-sm leading-relaxed text-pretty">「地域のために、こんなことができないか」を誰でも投稿できます。いいと思った案には「賛成」を。</p>
+    </div>
+
+    <form id="ideaForm" class="bg-white border border-stone-200 rounded-lg p-4 space-y-3">
+      <label class="block text-sm font-bold" for="ideaTitle">アイデア</label>
+      <input id="ideaTitle" maxlength="40" required class="w-full h-11 rounded border border-stone-300 px-3 text-base" placeholder="例: 地震で被災した方の家の片付けを手伝う" />
+      <label class="block text-sm font-bold" for="ideaClub">投稿するクラブ</label>
+      <select id="ideaClub" class="w-full h-11 rounded border border-stone-300 px-3 text-base"></select>
+      <p id="ideaErr" class="text-sm text-red-700 min-h-5" aria-live="polite"></p>
+      <button class="w-full h-11 rounded bg-[#0b2147] text-white font-bold">投稿する</button>
+    </form>
+
+    <div class="flex items-center justify-between">
+      <p class="text-sm"><b class="tabular-nums" id="ideaCount"></b>件のアイデア</p>
+      <button id="aiSortBtn" class="h-11 px-4 rounded border-2 border-[#0b2147] text-[#0b2147] font-bold text-sm">AIでテーマ別に整理</button>
+    </div>
+
+    <ul id="ideaList" class="space-y-2"></ul>
+    <div id="aiResult" class="space-y-3" hidden></div>
+  </section>
+
+  <!-- ================= 申込 ================= -->
+  <section id="tab-apply" class="tab-panel fade-in space-y-4" hidden>
+    <div>
+      <h2 class="text-lg font-bold text-gray-900 text-balance">行事・奉仕活動の申込</h2>
+      <p class="text-sm leading-relaxed text-pretty">申込と登録料の支払いまで、ここで完結します。事務局での取りまとめや振込確認が要らなくなります。</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2" role="tablist" aria-label="会員と事務局の画面切り替え">
+      <button class="h-10 rounded text-sm font-bold" data-view="member" role="tab">会員の画面</button>
+      <button class="h-10 rounded text-sm font-bold" data-view="office" role="tab">事務局の画面</button>
+    </div>
+
+    <div id="view-member" class="space-y-3">
+      <ul id="eventList" class="space-y-2"></ul>
+      <form id="applyForm" class="bg-white border border-stone-200 rounded-lg p-4 space-y-3" hidden>
+        <p class="text-xs font-bold text-[#0b2147]">申込内容</p>
+        <p id="applyEventName" class="font-bold text-gray-900"></p>
+        <label class="block text-sm font-bold" for="applyName">お名前</label>
+        <input id="applyName" maxlength="30" required class="w-full h-11 rounded border border-stone-300 px-3 text-base" placeholder="例: 熊本 太郎" />
+        <label class="block text-sm font-bold" for="applyClub">所属クラブ</label>
+        <select id="applyClub" class="w-full h-11 rounded border border-stone-300 px-3 text-base"></select>
+        <label class="block text-sm font-bold" for="applyNum">人数</label>
+        <select id="applyNum" class="w-full h-11 rounded border border-stone-300 px-3 text-base">
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+        <p class="text-sm">お支払い合計 <b id="applyTotal" class="text-lg tabular-nums text-gray-900"></b></p>
+        <p id="applyErr" class="text-sm text-red-700 min-h-5" aria-live="polite"></p>
+        <button id="applySubmit" class="w-full h-11 rounded bg-[#0b2147] text-white font-bold"></button>
+      </form>
+      <div id="applyDone" class="bg-white border-2 border-[#0b2147] rounded-lg p-4 text-sm leading-relaxed" hidden></div>
+    </div>
+
+    <div id="view-office" class="space-y-3" hidden>
+      <article class="bg-white border border-stone-200 rounded-lg p-4">
+        <p class="text-xs font-bold text-[#0b2147]">事務局の集計（自動）</p>
+        <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+          <div class="border border-stone-200 rounded p-2"><p class="text-xs">申込</p><p class="text-base font-bold tabular-nums text-gray-900 whitespace-nowrap" id="offTotal"></p></div>
+          <div class="border border-stone-200 rounded p-2"><p class="text-xs">入金済</p><p class="text-base font-bold tabular-nums text-gray-900 whitespace-nowrap" id="offPaid"></p></div>
+          <div class="border border-stone-200 rounded p-2"><p class="text-xs">例会出席</p><p class="text-base font-bold tabular-nums text-gray-900 whitespace-nowrap" id="offRsvp"></p></div>
+        </div>
+      </article>
+      <article class="bg-white border border-stone-200 rounded-lg p-4">
+        <p class="text-xs font-bold text-[#0b2147]">申込一覧</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm mt-2 min-w-[28rem]">
+            <thead class="text-xs text-gray-500 text-left"><tr><th class="py-1 font-normal">行事</th><th class="py-1 font-normal">お名前</th><th class="py-1 font-normal">クラブ</th><th class="py-1 font-normal text-right">金額</th></tr></thead>
+            <tbody id="offList" class="divide-y divide-stone-100"></tbody>
+          </table>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">一覧はそのまま Excel に書き出せます。名簿づくり・振込確認の手間を減らせます。</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<!-- 下のメニュー: 親指で押しやすい位置に置く -->
+<nav class="fixed bottom-0 inset-x-0 z-20 bg-white border-t border-stone-200 pb-[env(safe-area-inset-bottom)]" aria-label="メインメニュー">
+  <div class="mx-auto max-w-2xl grid grid-cols-4">
+    <button class="h-16 text-xs font-bold flex flex-col items-center justify-center gap-1" data-tab="home"><svg aria-hidden="true" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>ホーム</button>
+    <button class="h-16 text-xs font-bold flex flex-col items-center justify-center gap-1" data-tab="meeting"><svg aria-hidden="true" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>例会</button>
+    <button class="h-16 text-xs font-bold flex flex-col items-center justify-center gap-1" data-tab="ideas"><svg aria-hidden="true" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/></svg>アイデア箱</button>
+    <button class="h-16 text-xs font-bold flex flex-col items-center justify-center gap-1" data-tab="apply"><svg aria-hidden="true" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M4 10h16M8 15l2.5 2L16 13"/></svg>申込</button>
+  </div>
+</nav>
+
+<script>
+// ===== 基本データ（行事名・クラブ名は 337e.jp に公開されている本物） =====
+const CLUBS = ['熊本LC', '熊本南LC', '熊本城北LC', '熊本龍峰LC', '熊本葵LC', '熊本マグナLC', '熊本平成LC', '熊本りんどうLC', '熊本火の国LC', '熊本みらいLC', '宇土LC', '玉名LC', '荒尾LC', '合志LC'];
+const MEMBERS_TOTAL = 48; // 例会の対象人数（デモ用の仮の数）
+
+const EVENTS = [
+  { id: 'ev1', date: '2026-12-07', title: 'マークS.ライオン国際会長 公式訪問式典・歓迎晩餐会', place: 'ホテルオークラ京都', fee: 20000 },
+  { id: 'ev2', date: '2026-12-14', title: '熊本城北LC 高校献血推進運動', place: '熊本市内の高校', fee: 0 },
+  { id: 'ev3', date: '2026-12-15', title: '熊本龍峰LC 高校献血推進運動', place: '熊本市内の高校', fee: 0 },
+  { id: 'ev4', date: '2026-12-20', title: '熊本南LC クリスマス訪問', place: '市内の施設', fee: 0 },
+];
+
+const SEED_IDEAS = [
+  { id: 's1', title: '地震で被災した家の片付けを月1回手伝う', club: '熊本平成LC', votes: 14 },
+  { id: 's2', title: '高校での献血呼びかけを全クラブ合同でやる', club: '熊本城北LC', votes: 11 },
+  { id: 's3', title: '一人暮らしの高齢者に年末の見守り電話をする', club: '熊本葵LC', votes: 9 },
+  { id: 's4', title: '子ども食堂に地元の食材を届ける', club: '熊本南LC', votes: 8 },
+  { id: 's5', title: '川の清掃とEM団子づくりを親子イベントにする', club: '宇土LC', votes: 7 },
+  { id: 's6', title: '避難所で使える防災グッズを小学校に寄贈', club: '熊本LC', votes: 6 },
+  { id: 's7', title: '高校生向けに薬物乱用防止の出前授業', club: '熊本龍峰LC', votes: 5 },
+  { id: 's8', title: '高齢者施設でクリスマス会を開く', club: '熊本南LC', votes: 4 },
+];
+
+// AI整理のテーマ。デモでは言葉の手がかりで分類する（本番はAIが文章の意味で分類する）
+const THEMES = [
+  { key: 'disaster', name: '災害・復興', words: ['地震', '災害', '復興', '避難', '防災', '被災', '片付け'], note: '継続性が大切。月1回の定例化と、参加の申込をネットで受けると人数が読めます。目安: 1回10〜20名・通年。' },
+  { key: 'health', name: '健康・献血', words: ['献血', '健康', '薬', '医療', '視力', '病院', '検診'], note: '高校・医療機関との連携が鍵。複数クラブ合同にすると人手と告知の効果が上がります。目安: 1回5〜10名・年2〜3回。' },
+  { key: 'youth', name: '子ども・若者', words: ['子ども', '子供', '高校', '学生', '青少年', '若者', '学校', '小学校', 'キッズ', '親子', '食堂'], note: '学校・PTA・子ども食堂の窓口との調整が最初の一歩。夏休み・冬休みに合わせると集まりやすいです。' },
+  { key: 'elder', name: '高齢者・見守り', words: ['高齢', 'お年寄り', '見守り', '介護', 'シニア', '一人暮らし', '施設'], note: '年末年始の孤立対策として時期が合っています。地域包括支援センターとの連携を検討。' },
+  { key: 'env', name: '環境・まちづくり', words: ['清掃', 'ごみ', 'ゴミ', '環境', 'EM', '川', '花', '防犯', '公園'], note: '家族で参加しやすく、新しい会員を誘うきっかけにも向いています。' },
+];
+
+// ===== 保存（この端末の中だけ） =====
+const KEY = 'l337demo:v1';
+const initialState = () => ({ ideas: SEED_IDEAS.map(i => ({ ...i })), voted: [], rsvp: null, applications: [
+  { event: 'ev1', name: '山田 一郎', club: '熊本LC', num: 1, amount: 20000 },
+  { event: 'ev1', name: '佐藤 花子', club: '玉名LC', num: 2, amount: 40000 },
+  { event: 'ev2', name: '田中 健', club: '熊本城北LC', num: 1, amount: 0 },
+] });
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); return s && Array.isArray(s.ideas) ? s : initialState(); }
+  catch { return initialState(); }
+}
+let state = load();
+// 状態は毎回新しいオブジェクトに作り直して保存する（元を書き換えない）
+function setState(patch) { state = { ...state, ...patch }; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} render(); }
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const yen = n => n === 0 ? '無料' : n.toLocaleString('ja-JP') + '円';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtDate = d => { const t = new Date(d + 'T00:00:00'); return `${t.getMonth() + 1}/${t.getDate()}（${'日月火水木金土'[t.getDay()]}）`; };
+
+// ===== タブ切り替え =====
+function showTab(name) {
+  $$('.tab-panel').forEach(p => p.hidden = p.id !== 'tab-' + name);
+  $$('[data-tab]').forEach(b => { const on = b.dataset.tab === name; b.classList.toggle('text-[#0b2147]', on); b.classList.toggle('text-gray-400', !on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
+  window.scrollTo({ top: 0 });
+}
+$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) showTab(g.dataset.goto); });
+
+function setSegment(attr, value, panels) {
+  $$(`[data-${attr}]`).forEach(b => { const on = b.dataset[attr] === value; b.className = 'h-10 rounded text-sm font-bold ' + (on ? 'bg-[#0b2147] text-white' : 'bg-stone-100 text-gray-600'); b.setAttribute('aria-selected', on); });
+  Object.entries(panels).forEach(([k, el]) => { el.hidden = k !== value; el.classList.toggle('hidden', k !== value); });
+}
+
+// ===== 例会: 出欠 =====
+const RSVP_BASE = { yes: 27, no: 6 }; // 他の会員の回答（デモ用）
+$$('[data-rsvp]').forEach(b => b.addEventListener('click', () => setState({ rsvp: b.dataset.rsvp })));
+$$('[data-minutes]').forEach(b => b.addEventListener('click', () => setSegment('minutes', b.dataset.minutes, { full: $('#minutes-full'), line: $('#minutes-line') })));
+
+// ===== アイデア箱 =====
+$('#ideaForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = $('#ideaTitle').value.trim();
+  if (title.length < 5) { $('#ideaErr').textContent = 'アイデアは5文字以上で書いてください。'; return; }
+  if (state.ideas.some(i => i.title === title)) { $('#ideaErr').textContent = '同じアイデアがすでに投稿されています。賛成で応援してください。'; return; }
+  $('#ideaErr').textContent = '';
+  const idea = { id: 'u' + Date.now(), title, club: $('#ideaClub').value, votes: 1, mine: true };
+  setState({ ideas: [idea, ...state.ideas], voted: [...state.voted, idea.id] });
+  $('#ideaTitle').value = '';
+  $('#aiResult').hidden = true;
+});
+$('#ideaList').addEventListener('click', e => {
+  const b = e.target.closest('[data-vote]'); if (!b) return;
+  const id = b.dataset.vote; const already = state.voted.includes(id);
+  setState({
+    ideas: state.ideas.map(i => i.id === id ? { ...i, votes: i.votes + (already ? -1 : 1) } : i),
+    voted: already ? state.voted.filter(v => v !== id) : [...state.voted, id],
+  });
+});
+// 当てはまる言葉が一番多いテーマを選ぶ（1つも無ければ「その他」）
+function classify(title) {
+  const scored = THEMES.map(th => ({ key: th.key, hits: th.words.filter(w => title.includes(w)).length }));
+  const best = scored.reduce((a, b) => (b.hits > a.hits ? b : a), { key: 'other', hits: 0 });
+  return best.key;
+}
+$('#aiSortBtn').addEventListener('click', () => {
+  const box = $('#aiResult');
+  box.hidden = false;
+  box.innerHTML = '<p class="text-sm text-center py-6" aria-live="polite">AIが整理しています…</p>';
+  setTimeout(() => {
+    const groups = [...THEMES, { key: 'other', name: 'その他', note: '内容を例会で確認し、テーマを決めます。' }]
+      .map(th => ({ ...th, items: state.ideas.filter(i => classify(i.title) === th.key).sort((a, b) => b.votes - a.votes) }))
+      .filter(g => g.items.length)
+      .sort((a, b) => b.items.reduce((s, i) => s + i.votes, 0) - a.items.reduce((s, i) => s + i.votes, 0));
+    const top = [...state.ideas].sort((a, b) => b.votes - a.votes).slice(0, 3);
+    box.innerHTML = `
+      <article class="bg-[#0b2147] text-white rounded-lg p-4 fade-in">
+        <p class="text-xs text-[#ebb700] font-bold">AIのまとめ ─ 次回例会のたたき台</p>
+        <p class="text-sm mt-2 leading-relaxed">${state.ideas.length}件のアイデアを${groups.length}つのテーマに整理しました。賛成の多い案は次のとおりです。票は参考とし、議題は役員の方が地域の必要性と実現性から選んでください。</p>
+        <ol class="text-sm mt-2 list-decimal pl-5 space-y-1">${top.map(i => `<li>${esc(i.title)}（賛成 <span class="tabular-nums">${i.votes}</span>）</li>`).join('')}</ol>
+      </article>
+      ${groups.map(g => `
+        <article class="bg-white border border-stone-200 rounded-lg p-4 fade-in">
+          <div class="flex items-baseline justify-between gap-2"><p class="font-bold text-gray-900">${g.name}</p><p class="text-xs tabular-nums shrink-0">${g.items.length}件・賛成 ${g.items.reduce((s, i) => s + i.votes, 0)}</p></div>
+          <ul class="text-sm mt-1 list-disc pl-5">${g.items.map(i => `<li>${esc(i.title)}</li>`).join('')}</ul>
+          <p class="text-xs mt-2 leading-relaxed border-l-2 border-[#ebb700] pl-2">AIの見立て: ${g.note}</p>
+        </article>`).join('')}
+      <p class="text-xs text-gray-500">※ デモでは言葉の手がかりで分けています。本番はAIが文章の意味を読み、必要な人数・予算・連携先まで整理します。</p>`;
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 600);
+});
+
+// ===== 申込 =====
+let selectedEvent = null;
+$$('[data-view]').forEach(b => b.addEventListener('click', () => setSegment('view', b.dataset.view, { member: $('#view-member'), office: $('#view-office') })));
+$('#eventList').addEventListener('click', e => {
+  const b = e.target.closest('[data-apply]'); if (!b) return;
+  selectedEvent = EVENTS.find(ev => ev.id === b.dataset.apply);
+  $('#applyForm').hidden = false; $('#applyDone').hidden = true;
+  $('#applyEventName').textContent = `${fmtDate(selectedEvent.date)} ${selectedEvent.title}`;
+  updateTotal();
+  $('#applyForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+function updateTotal() {
+  if (!selectedEvent) return;
+  const total = selectedEvent.fee * Number($('#applyNum').value);
+  $('#applyTotal').textContent = yen(total);
+  $('#applySubmit').textContent = total ? 'カードで支払って申し込む（デモ）' : '申し込む';
+}
+$('#applyNum').addEventListener('change', updateTotal);
+$('#applyForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('#applyName').value.trim();
+  if (name.length < 2) { $('#applyErr').textContent = 'お名前を入力してください。'; return; }
+  $('#applyErr').textContent = '';
+  const num = Number($('#applyNum').value);
+  const app = { event: selectedEvent.id, name, club: $('#applyClub').value, num, amount: selectedEvent.fee * num };
+  setState({ applications: [...state.applications, app] });
+  $('#applyForm').hidden = true; $('#applyDone').hidden = false;
+  $('#applyDone').innerHTML = `<p class="font-bold text-gray-900">申込が完了しました</p>
+    <p class="mt-1">${esc(fmtDate(selectedEvent.date))} ${esc(selectedEvent.title)}／${num}名／${yen(app.amount)}</p>
+    <p class="mt-2">確認のメッセージがLINEに届きます。事務局の一覧にも自動で反映されました（「事務局の画面」で確認できます）。</p>
+    <p class="text-xs text-gray-500 mt-2">※ デモのため実際の支払いは行われません。本番はカード決済（Stripe）を使います。</p>`;
+  $('#applyName').value = '';
+});
+
+// ===== 画面の描き直し =====
+function render() {
+  const yes = RSVP_BASE.yes + (state.rsvp === 'yes' ? 1 : 0);
+  const no = RSVP_BASE.no + (state.rsvp === 'no' ? 1 : 0);
+  $$('[data-count="yes"]').forEach(el => el.textContent = yes);
+  $$('[data-count="no"]').forEach(el => el.textContent = no);
+  $$('[data-count="none"]').forEach(el => el.textContent = MEMBERS_TOTAL - yes - no);
+  $$('[data-rsvp]').forEach(b => { const on = b.dataset.rsvp === state.rsvp; b.className = 'h-11 rounded border font-bold ' + (on ? 'bg-[#0b2147] text-white border-[#0b2147]' : 'border-stone-300'); b.setAttribute('aria-pressed', on); });
+  const msg = { yes: '出席で受け付けました。前日にLINEで参加リンクをお送りします。', no: '欠席で受け付けました。終わったら要点がLINEに届きます。', maybe: '未定で受け付けました。前日にもう一度お知らせします。' };
+  $('#rsvpMsg').textContent = state.rsvp ? msg[state.rsvp] : '';
+
+  $('#ideaCount').textContent = state.ideas.length;
+  $('#ideaCountHome').textContent = state.ideas.length;
+  $('#ideaList').innerHTML = [...state.ideas].sort((a, b) => b.votes - a.votes).map(i => {
+    const on = state.voted.includes(i.id);
+    return `<li class="bg-white border border-stone-200 rounded-lg p-3 flex items-center gap-3">
+      <div class="flex-1 min-w-0"><p class="text-sm font-bold text-gray-900 break-words">${esc(i.title)}</p><p class="text-xs mt-0.5">${esc(i.club)}${i.mine ? '・あなたの投稿' : ''}</p></div>
+      <button data-vote="${i.id}" aria-pressed="${on}" aria-label="「${esc(i.title)}」に賛成" class="shrink-0 w-16 h-11 rounded border text-xs font-bold ${on ? 'bg-[#ebb700] border-[#ebb700] text-[#0b2147]' : 'border-stone-300'}">賛成<br><span class="tabular-nums">${i.votes}</span></button>
+    </li>`;
+  }).join('');
+
+  $('#eventList').innerHTML = EVENTS.map(ev => `<li class="bg-white border border-stone-200 rounded-lg p-3 flex items-center gap-3">
+    <div class="flex-1 min-w-0"><p class="text-xs tabular-nums">${fmtDate(ev.date)}・${esc(ev.place)}</p><p class="text-sm font-bold text-gray-900 break-words">${esc(ev.title)}</p><p class="text-xs mt-0.5">登録料 ${yen(ev.fee)}</p></div>
+    <button data-apply="${ev.id}" class="shrink-0 h-11 px-4 rounded bg-[#0b2147] text-white text-sm font-bold">申込</button></li>`).join('');
+
+  $('#offTotal').textContent = state.applications.reduce((s, a) => s + a.num, 0) + '名';
+  $('#offPaid').textContent = yen(state.applications.reduce((s, a) => s + a.amount, 0)).replace('無料', '0円');
+  $('#offRsvp').textContent = yes + '名';
+  $('#offList').innerHTML = [...state.applications].reverse().map(a => {
+    const ev = EVENTS.find(x => x.id === a.event);
+    return `<tr><td class="py-1.5 pr-2">${esc(ev ? fmtDate(ev.date) + ' ' + ev.title.slice(0, 12) + '…' : '')}</td><td class="pr-2">${esc(a.name)}（${a.num}）</td><td class="pr-2">${esc(a.club)}</td><td class="text-right tabular-nums">${yen(a.amount)}</td></tr>`;
+  }).join('');
+}
+
+// ===== 初期化 =====
+const clubOptions = CLUBS.map(c => `<option>${c}</option>`).join('');
+$('#ideaClub').innerHTML = clubOptions; $('#applyClub').innerHTML = clubOptions;
+$('#resetBtn').addEventListener('click', () => { if (confirm('デモの入力内容を最初の状態に戻しますか？')) { localStorage.removeItem(KEY); state = initialState(); $('#aiResult').hidden = true; render(); showTab('home'); } });
+setSegment('minutes', 'full', { full: $('#minutes-full'), line: $('#minutes-line') });
+setSegment('view', 'member', { member: $('#view-member'), office: $('#view-office') });
+render();
+const TABS = ['home', 'meeting', 'ideas', 'apply'];
+const requested = new URLSearchParams(location.search).get('tab');
+showTab(TABS.includes(requested) ? requested : 'home');
+</script>
+</body>
+</html>
